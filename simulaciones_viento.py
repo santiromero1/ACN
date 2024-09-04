@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy import stats
+from sklearn.metrics import mean_squared_error
+from statsmodels.stats.diagnostic import acorr_ljungbox
 
 # Cargar los datos históricos
 historical_data = pd.read_excel('wind_data.xlsx')
@@ -43,7 +46,7 @@ for i in range(n_days):
     # Simulación de la diferencia de viento
     D[i + 1] = D[i] - beta * D[i] * delta + gamma * np.sqrt(delta) * W[i]
     
-    # Calcular el viento en cada molino
+    # Calcular el viento en cada molino (SUPOSICIÓN)
     V_norte[i] = S[i] + D[i] / 2
     V_sur[i] = S[i] - D[i] / 2
 
@@ -58,6 +61,7 @@ df_simulation = pd.DataFrame({
 
 # Guardar los resultados en un archivo Excel
 df_simulation.to_excel('simulacion_viento.xlsx', index=False)
+
 
 # Graficar los resultados
 plt.figure(figsize=(14, 10))
@@ -86,3 +90,28 @@ plt.grid(True)
 
 plt.tight_layout()
 plt.show()
+
+
+# Comparaciones Estadísticas (SUGERIDAS POR CHAT)
+
+# 1. Prueba t para comparar medias
+t_stat, p_value_t = stats.ttest_ind(df_simulation['Viento Regional Simulado'], filtered_data['regional wind'], equal_var=False)
+print(f"Prueba t para Viento Regional Simulado vs Histórico: t_stat = {t_stat:.3f}, p_value = {p_value_t:.3f}")
+
+# 2. Root Mean Square Error (RMSE)
+rmse_regional = np.sqrt(mean_squared_error(filtered_data['regional wind'], df_simulation['Viento Regional Simulado']))
+rmse_wind_gap = np.sqrt(mean_squared_error(filtered_data['wind gap norte sur'], df_simulation['Wind Gap Simulado']))
+print(f"RMSE para Viento Regional: {rmse_regional:.3f}")
+print(f"RMSE para Wind Gap: {rmse_wind_gap:.3f}")
+
+# 3. Coeficiente de Correlación de Pearson
+pearson_corr_regional, _ = stats.pearsonr(filtered_data['regional wind'], df_simulation['Viento Regional Simulado'])
+pearson_corr_wind_gap, _ = stats.pearsonr(filtered_data['wind gap norte sur'], df_simulation['Wind Gap Simulado'])
+print(f"Coeficiente de Correlación de Pearson para Viento Regional: {pearson_corr_regional:.3f}")
+print(f"Coeficiente de Correlación de Pearson para Wind Gap: {pearson_corr_wind_gap:.3f}")
+
+# 4. Prueba de autocorrelación de Ljung-Box
+ljung_box_regional = acorr_ljungbox(df_simulation['Viento Regional Simulado'] - filtered_data['regional wind'], lags=[10], return_df=True)
+ljung_box_wind_gap = acorr_ljungbox(df_simulation['Wind Gap Simulado'] - filtered_data['wind gap norte sur'], lags=[10], return_df=True)
+print(f"Prueba de Ljung-Box para autocorrelación de residuales (Viento Regional): p_value = {ljung_box_regional['lb_pvalue'].values[0]:.3f}")
+print(f"Prueba de Ljung-Box para autocorrelación de residuales (Wind Gap): p_value = {ljung_box_wind_gap['lb_pvalue'].values[0]:.3f}")
