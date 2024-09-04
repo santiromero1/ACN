@@ -2,19 +2,17 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
 # Cargar los datos históricos
 historical_data = pd.read_excel('wind_data.xlsx')
 
 # Filtrar los datos hasta el día 365
 filtered_data = historical_data[historical_data['dia'] <= 365]
 
-
 # Parámetros estimados
-kappa = 105.60 # ± 4.34
-sigma = 306.57 # ± 5.07
-beta = 48.38 # ± 3.01
-gamma = 5855.45 # ± 3.19
+kappa = 109.21
+sigma = 16.04
+beta = 48.38
+gamma = 10.09
 
 # Parámetros de simulación
 n_days = 365
@@ -49,26 +47,42 @@ for i in range(n_days):
     V_norte[i] = S[i] + D[i] / 2
     V_sur[i] = S[i] - D[i] / 2
 
-
 # Dataframe con datos de la simulación diaria
 df_simulation = pd.DataFrame({
     'Día': np.arange(n_days),
-    'Viento Regional': S[:-1],
-    'Viento Norte': V_norte,
-    'Viento Sur': V_sur,
+    'Viento Regional Simulado': S[:-1],
+    'Viento Norte Simulado': V_norte,
+    'Viento Sur Simulado': V_sur,
+    'Wind Gap Simulado': V_norte - V_sur
 })
 
 # Guardar los resultados en un archivo Excel
 df_simulation.to_excel('simulacion_viento.xlsx', index=False)
 
 # Graficar los resultados
-plt.figure(figsize=(14, 7))
-plt.plot(df_simulation['Día'], df_simulation['Viento Norte'], label='Viento Norte')
-plt.plot(df_simulation['Día'], df_simulation['Viento Sur'], label='Viento Sur')
-plt.plot(df_simulation['Día'], df_simulation['Viento Regional'], label='Viento Regional', linestyle='--', color='grey')
+plt.figure(figsize=(14, 10))
+
+# Primer gráfico: Viento Regional Simulado vs Histórico
+plt.subplot(2, 1, 1)
+plt.plot(df_simulation['Día'], df_simulation['Viento Regional Simulado'], label='Viento Regional Simulado', linestyle='--', color='grey')
+plt.plot(filtered_data['dia'], filtered_data['regional wind'], label='Viento Regional Histórico', linestyle='-', color='blue')
 plt.xlabel('Día')
 plt.ylabel('Velocidad del Viento')
-plt.title('Simulación del Viento en Molinos Norte y Sur')
+plt.title('Viento Regional Simulado vs Histórico')
 plt.legend()
 plt.grid(True)
+
+# Segundo gráfico: Viento Norte, Sur, Wind Gap Simulado vs Wind Gap Histórico
+plt.subplot(2, 1, 2)
+plt.plot(df_simulation['Día'], df_simulation['Viento Norte Simulado'], label='Viento Norte Simulado', linestyle='-', color='green')
+plt.plot(df_simulation['Día'], df_simulation['Viento Sur Simulado'], label='Viento Sur Simulado', linestyle='-', color='red')
+plt.plot(filtered_data['dia'], filtered_data['wind gap norte sur'], label='Wind Gap Histórico', linestyle='--', color='purple')
+plt.plot(df_simulation['Día'], df_simulation['Wind Gap Simulado'], label='Wind Gap Simulado', linestyle='-', color='orange')
+plt.xlabel('Día')
+plt.ylabel('Velocidad del Viento')
+plt.title('Viento Norte y Sur Simulados vs Wind Gap Histórico y Simulado')
+plt.legend()
+plt.grid(True)
+
+plt.tight_layout()
 plt.show()
