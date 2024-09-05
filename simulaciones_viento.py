@@ -56,7 +56,7 @@ df_simulation = pd.DataFrame({
     'Viento Regional Simulado': S[:-1],
     'Viento Norte Simulado': V_norte,
     'Viento Sur Simulado': V_sur,
-    'Wind Gap Simulado': V_norte - V_sur
+    'Wind Gap Simulado': V_sur - V_norte
 })
 
 # Guardar los resultados en un archivo Excel
